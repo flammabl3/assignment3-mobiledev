@@ -1,87 +1,84 @@
-import CallAPI from '../components/CallAPI';
-import { StyleSheet, Text, View, Button } from 'react-native';
-import { useState } from 'react';
-import {Picker} from '@react-native-picker/picker';
+import CallAPI from "../components/CallAPI";
+import React from "react";
+import { StyleSheet, Text, View, Button } from "react-native";
+import { useState } from "react";
+import ModalSelector from "react-native-modal-selector";
+
+type MonthOption = { key: number; label: string };
 
 export default function Index() {
-  const [selectedDate, setSelectedDate] = useState(new Date(Date.now()));
+  const [selectedMonth, setSelectedMonth] = useState<MonthOption | null>(null);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  type Month = {
-    name: string,
-    days: number
-  }
-
+  // Example months array
   const months = [
-    {name: "January", days: 31},
-    {name: "February", days: 29}, // February can always be assumed to have 29 days possible
-    {name: "March", days: 31},
-    {name: "April", days: 30},
-    {name: "May", days: 31},
-    {name: "June", days: 30},
-    {name: "July", days: 31},
-    {name: "August", days: 31},
-    {name: "September", days: 30},
-    {name: "October", days: 31},
-    {name: "November", days: 30},
-    {name: "December", days: 31}
+    { key: 0, label: "January", days: 31 },
+    { key: 1, label: "February", days: 29 },
+    { key: 2, label: "March", days: 31 },
+    { key: 3, label: "April", days: 30 },
+    { key: 4, label: "May", days: 31 },
+    { key: 5, label: "June", days: 30 },
+    { key: 6, label: "July", days: 31 },
+    { key: 7, label: "August", days: 31 },
+    { key: 8, label: "September", days: 30 },
+    { key: 9, label: "October", days: 31 },
+    { key: 10, label: "November", days: 30 },
+    { key: 11, label: "December", days: 31 },
   ];
 
-
-  /* Each Month has a different number of days. Get the number of days in the current month and generate a Picker.Item
-   *  for each day in the month. 
-   */
-  const generatePickerDates = () => {
-    
-    let dayItems = [];
-    let daysInThisMonth : number = months[selectedDate.getMonth()].days;
-
-    for (let i = 1; i <= daysInThisMonth; i++) {
-      dayItems.push(
-        <Picker.Item key={i} label={i.toString()} value={i} />
-      );
+  // Generate day options based on the current month
+  const generateDayOptions = (): MonthOption[] => {
+    if (!selectedMonth) return [];
+    const daysArray = [];
+    for (let i = 1; i <= months[selectedMonth.key].days; i++) {
+      daysArray.push({ key: i, label: i.toString() });
     }
-    
-    return dayItems;
-  }
-
-  const generatePickerMonths = () => {
-    let monthItems = [];
-    for (let i = 0; i < months.length; i++) {
-      monthItems.push(
-        <Picker.Item key={i} label={months[i].name} value={i} />
-      );
-    }
-    
-    return monthItems;
-  }
+    return daysArray;
+  };
 
   return (
     <View style={styles.container}>
-      <Picker
-        style={styles.monthPicker}
-        selectedValue={selectedDate.getMonth()}
-        onValueChange={(itemValue) => {
-          /* Non-existent dates like February 31st will cause a mismatch between selectedDate and the new date. Thus rollback to the last month.
-           * Modify the date of the current selectedDate. Then create a new date object with the modified date. Finally set the
-             state to be a new Date() object using the old date in the constructor. Using a simple type object would be better...*/
-             const newDate = new Date(selectedDate.getFullYear(), itemValue, selectedDate.getDate());
-             if (newDate.getMonth() !== itemValue) {
-               newDate.setDate(0); // Roll back to the last day of the previous month
-             }
-             setSelectedDate(newDate);
-        }}>
-        {generatePickerMonths()}
-      </Picker>
-      <Picker
-        style={styles.monthPicker}
-        selectedValue={selectedDate.getDate()}
-        onValueChange={(itemValue) =>
-          // see above picker for logic
-          setSelectedDate(new Date(selectedDate.setDate(itemValue)))
-        }>
-        {generatePickerDates()}
-      </Picker>
-      <CallAPI requestDate={selectedDate} />
+      <Text style={styles.title}>Select a date:</Text>
+
+      {/* Month selection drop-down */}
+      <ModalSelector
+        data={months}
+        initValue="Select a month"
+        onChange={(option: MonthOption) => {
+          setSelectedMonth(option);
+          // auto-set day to null or first day, if you prefer
+          setSelectedDay(null);
+        }}
+        style={styles.selector}
+        selectStyle={styles.selectBox}
+        selectTextStyle={styles.selectText}
+      />
+
+      {/* Day selection drop-down (only shows days for selected month) */}
+      <ModalSelector
+        data={generateDayOptions()}
+        initValue="Select a day"
+        onChange={(option: MonthOption) => {
+          setSelectedDay(option.key);
+        }}
+        style={styles.selector}
+        selectStyle={styles.selectBox}
+        selectTextStyle={styles.selectText}
+      />
+
+      {/* Example usage: pass selected data to CallAPI */}
+      {selectedMonth && selectedDay && (
+        <CallAPI
+          requestDate={
+            new Date(new Date().getFullYear(), selectedMonth.key, selectedDay)
+          }
+        />
+      )}
+
+      <View style={styles.infoContainer}>
+        <Text>Selected Month: {selectedMonth?.label || "None"}</Text>
+        <Text>Selected Day: {selectedDay || "None"}</Text>
+      </View>
     </View>
   );
 }
@@ -89,12 +86,34 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
   },
-  monthPicker: {
-    height: 70, 
-    width: 200 
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#333",
+  },
+  selector: {
+    marginBottom: 15,
+    width: 200,
+  },
+  selectBox: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+  },
+  selectText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  infoContainer: {
+    marginTop: 20,
+    alignItems: "center",
   },
 });
