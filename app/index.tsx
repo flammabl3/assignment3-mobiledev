@@ -1,6 +1,6 @@
 import CallAPI from "../components/CallAPI";
 import React from "react";
-import { StyleSheet, Text, View, Button } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
 import ModalSelector from "react-native-modal-selector";
 
@@ -10,7 +10,6 @@ export default function Index() {
   const [selectedMonth, setSelectedMonth] = useState<MonthOption | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  // Example months array
   const months = [
     { key: 0, label: "January", days: 31 },
     { key: 1, label: "February", days: 29 },
@@ -26,7 +25,6 @@ export default function Index() {
     { key: 11, label: "December", days: 31 },
   ];
 
-  // Generate day options based on the current month
   const generateDayOptions = (): MonthOption[] => {
     if (!selectedMonth) return [];
     const daysArray = [];
@@ -38,47 +36,42 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Select a date:</Text>
+      <Text style={styles.title}>Select a Date</Text>
 
-      {/* Month selection drop-down */}
       <ModalSelector
         data={months}
-        initValue="Select a month"
+        initValue={selectedMonth ? selectedMonth.label : "Select a Month"}
         onChange={(option: MonthOption) => {
           setSelectedMonth(option);
-          // auto-set day to null or first day, if you prefer
           setSelectedDay(null);
         }}
         style={styles.selector}
         selectStyle={styles.selectBox}
         selectTextStyle={styles.selectText}
+        initValueTextStyle={styles.initText} // Darker placeholder text
       />
 
-      {/* Day selection drop-down (only shows days for selected month) */}
       <ModalSelector
         data={generateDayOptions()}
-        initValue="Select a day"
-        onChange={(option: MonthOption) => {
-          setSelectedDay(option.key);
-        }}
+        initValue={selectedDay ? selectedDay.toString() : "Select a Day"}
+        onChange={(option: MonthOption) => setSelectedDay(option.key)}
         style={styles.selector}
         selectStyle={styles.selectBox}
         selectTextStyle={styles.selectText}
+        initValueTextStyle={styles.initText} 
       />
 
-      {/* Example usage: pass selected data to CallAPI */}
       {selectedMonth && selectedDay && (
-        <CallAPI
-          requestDate={
-            new Date(new Date().getFullYear(), selectedMonth.key, selectedDay)
-          }
-        />
+        <View style={styles.apiContainer}>
+          <CallAPI
+            requestDate={new Date(
+              new Date().getFullYear(),
+              selectedMonth.key,
+              selectedDay
+            )}
+          />
+        </View>
       )}
-
-      <View style={styles.infoContainer}>
-        <Text>Selected Month: {selectedMonth?.label || "None"}</Text>
-        <Text>Selected Day: {selectedDay || "None"}</Text>
-      </View>
     </View>
   );
 }
@@ -86,34 +79,47 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f4f4f5",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
   },
   title: {
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: "600",
     marginBottom: 20,
     color: "#333",
   },
   selector: {
     marginBottom: 15,
-    width: 200,
+    width: 220,
   },
   selectBox: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 5,
+    borderColor: "#444",
+    padding: 12,
+    borderRadius: 8,
     backgroundColor: "#fff",
   },
   selectText: {
     fontSize: 16,
-    color: "#333",
+    fontWeight: "500",
+    color: "#222",
   },
-  infoContainer: {
+  initText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#555",
+  },
+  apiContainer: {
     marginTop: 20,
+    padding: 15,
+    width: "90%",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
     alignItems: "center",
+    justifyContent: "center",
   },
 });
